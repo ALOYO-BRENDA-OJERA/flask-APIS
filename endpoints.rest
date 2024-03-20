@@ -1,0 +1,20 @@
+@baseUrl=http://127.0.0.1:5000/api/v1
+
+### Add books
+{{baseUrl}}/book/register
+content-type: application/json
+
+{
+    "title": "Oliver Twist",
+    "description": "Oliver Twist is about a young boy and his life challenges.",
+    "image": "image.jpg",
+    "price": 40000,
+    "price_unit": "UGX",
+    "pages": 500,
+    "publication_date": "1837-1839",
+    "isbn": "978-0-306-40615-7",
+    "genre": ["Classic Literature", "Social Commentary"],
+    "user_id": "your_user_id",
+    "company_id": "your_company_id",
+    "created_at": "2024-03-19T10:00:00"
+}

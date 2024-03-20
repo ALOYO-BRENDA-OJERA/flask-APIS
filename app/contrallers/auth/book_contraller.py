@@ -1,14 +1,17 @@
 from flask import Blueprint, request, jsonify
-from app.models.books import Book  # Import the Book model
+from app.models.books import Book
+from app.models.users import User
+from app.models.companies import Company
 from app.extensions import db
+from datetime import datetime
 
 book_bp = Blueprint('book', __name__, url_prefix='/api/v1/book')
 
 @book_bp.route('/register', methods=['POST'])
 def register_book():
-    data = request.json
-    
-    #id = data.get('id')
+    data = request.get_json()
+
+    # Extract data from the request
     title = data.get('title')
     description = data.get('description')
     image = data.get('image')
@@ -18,52 +21,37 @@ def register_book():
     publication_date = data.get('publication_date')
     isbn = data.get('isbn')
     genre = data.get('genre')
-    pages = data.get('pages')
     user_id = data.get('user_id')
     company_id = data.get('company_id')
-    created_at = data.get('created_at')
-    updated_at = data.get('updated_at')
 
-    #if not id:
-        #return jsonify({"error": 'Your id is required'})
+    # Validate required fields
+    required_fields = ['title', 'description', 'price', 'price_unit', 'pages', 'publication_date', 'isbn', 'genre', 'user_id', 'company_id']
+    missing_fields = [field for field in required_fields if not data.get(field)]
+    if missing_fields:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
-    if not title:
-        return jsonify({"error": 'Your title is required'})
+    # Convert publication_date to a Date object
+    try:
+        publication_date = datetime.strptime(publication_date, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"error": "Invalid publication date format. Please use YYYY-MM-DD"}), 400
 
-    if not description:
-        return jsonify({"error": 'The description is required'})
+    # Check if user and company exist
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": f"User with ID {user_id} not found"}), 404
 
-    if not price:
-        return jsonify({"error": 'The price is required'})
+    company = Company.query.get(company_id)
+    if not company:
+        return jsonify({"error": f"Company with ID {company_id} not found"}), 404
 
-    if not price_unit:
-        return jsonify({"error": 'The price_unit is required'})
-
-    if not publication_date:
-        return jsonify({"error": 'Please input the publication_date'})
-
-    if not isbn:
-        return jsonify({"error": 'Please input the isbn'})
-
-    if not genre:
-        return jsonify({"error": 'Please specify the genre'})
-    
-    if not pages:
-        return jsonify({"error":'please enter the number of pages'})
-    
-    if not user_id:
-        return jsonify({"error":'what is your user_id'})
-    
-    if not company_id:
-        return jsonify({"error":'enter company id'})
-
-    #new_book = Book(title=title, description=description, price=price, price_unit=price_unit,
-                    #publication_date=publication_date, isbn=isbn, genre=genre)
+    # Create a new book instance with retrieved objects
     new_book = Book(title=title, description=description, price=price, price_unit=price_unit,
-                    pages=pages, user_id=user_id, company_id=company_id, image=image,
+                    pages=pages, user=user, company=company, image=image,
                     publication_date=publication_date, isbn=isbn, genre=genre)
-    
+
+    # Add the book to the database session and commit changes
     db.session.add(new_book)
     db.session.commit()
 
-    return jsonify({"message": f"Book '{title}' has been uploaded"})
+    return jsonify({"message": f"Book '{title}' has been uploaded"}), 201
