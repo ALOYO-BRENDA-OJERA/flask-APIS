@@ -16,13 +16,13 @@ class Book(db.Model):
     pages = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Made nullable=False
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)  # Made nullable=False
-    created_at = db.Column(db.DateTime, default=datetime.now())
-    updated_at = db.Column(db.DateTime, onupdate=datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.now)
 
     user = db.relationship('User', backref='books')
     company = db.relationship('Company', backref='books')
     
-    def __init__(self, title, description, price, price_unit, publication_date, isbn, genre, pages, user_id, company_id, image):
+    def __init__(self, title, description, price, price_unit, publication_date, isbn, genre, pages, user_id, company_id):
         super(Book, self).__init__()
         self.title = title
         self.description = description
@@ -34,7 +34,6 @@ class Book(db.Model):
         self.pages = pages
         self.user_id = user_id
         self.company_id = company_id
-        self.image = image
 
     def __repr__(self):
         return f'<Book {self.title}>'

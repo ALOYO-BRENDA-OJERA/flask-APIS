@@ -1,11 +1,12 @@
 from flask import Flask
-from app.extensions import migrate,db
+from app.extensions import migrate, db
+from flask_sqlalchemy import SQLAlchemy
 from app.contrallers.auth.auth_contraller import auth
 from app.contrallers.auth.book_contraller import book_bp
-from app.contrallers.auth.company_contraller import company_bp  # Import the company blueprint
-
+from app.contrallers.auth.company_contraller import company_bp  # Corrected import statement
 
 # Import your database model classes here
+
 
 def create_app():
     app = Flask(__name__)
@@ -17,14 +18,9 @@ def create_app():
     db.init_app(app)
 
     # Initialize Flask-Migrate for handling database migrations
-    migrate.init_app(app,db)
-
+    migrate.init_app(app, db)
 
     # Register blueprints or routes here
-    
-    @app.route('/')
-    def home():
-        return "AUTHORS API project set up 1"
     
     
     from app.models.users import User
@@ -32,7 +28,14 @@ def create_app():
     from app.models.books import Book
 
     app.register_blueprint(auth)
-    app.register_blueprint(book_bp)  # Register the book blueprint with the specified URL prefix
-    app.register_blueprint(company_bp)# Register the company blueprint with the specified URL prefix
+    app.register_blueprint(book_bp)
+    app.register_blueprint(company_bp)  # Register the company blueprint
+    
+    
+    
+    @app.route('/')
+    def home():
+        return "AUTHORS API project set up 1"
 
     return app
+

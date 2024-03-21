@@ -11,8 +11,8 @@ class User(db.Model):
     password = db.Column(db.Text(255),nullable=False)
     biography = db.Column(db.Text(),nullable=True)
     user_type = db.Column(db.String(20),default='author')
-    created_at = db.Column(db.DateTime,default=datetime.now())
-    updated_at = db.Column(db.DateTime,onupdate=datetime.now())
+    created_at = db.Column(db.DateTime,default=datetime.now)
+    updated_at = db.Column(db.DateTime,onupdate=datetime.now)
     
      # Define relationship to books authored by the user
     books_authored = db.relationship('Book', backref='author', lazy=True)
