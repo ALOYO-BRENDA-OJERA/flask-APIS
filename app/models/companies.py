@@ -12,7 +12,8 @@ class Company(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now())
     updated_at = db.Column(db.DateTime, onupdate=datetime.now())
 
-    def __init__(self, name, origin, description, user_id):
+    def __init__(self, name, origin, description):
+        
         self.name = name
         self.origin = origin
         self.description = description

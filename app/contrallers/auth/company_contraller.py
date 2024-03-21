@@ -11,12 +11,15 @@ def register_company():
     try:
         # Extracting request data
         company_id = request.json.get('company_id')
+        id = request.json.get('id')
         name = request.json.get('name')
         origin = request.json.get('origin')
         description = request.json.get('description')
         #user_id = request.json.get('user_id')  
 
         # Basic input validation
+        if not id:
+            return jsonify({"error": "enter id"}),400
         if not company_id:
             return jsonify({"error": 'Company ID is required'}), 400
 
