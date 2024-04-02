@@ -5,23 +5,17 @@ from app.models.users import User
 company_bp = Blueprint('company', __name__, url_prefix='/api/v1/company')
 
 @company_bp.route('/register', methods=['POST'])
-
-@company_bp.route('/register', methods=['POST'])
 def register_company():
     try:
         # Extracting request data
-        company_id = request.json.get('company_id')
-        id = request.json.get('id')
+        #company_id = request.json.get('company_id')
         name = request.json.get('name')
         origin = request.json.get('origin')
         description = request.json.get('description')
-        #user_id = request.json.get('user_id')  
 
         # Basic input validation
-        if not id:
-            return jsonify({"error": "enter id"}),400
-        if not company_id:
-            return jsonify({"error": 'Company ID is required'}), 400
+        #if not company_id:
+            #return jsonify({"error": 'Company ID is required'}), 400
 
         if not name:
             return jsonify({"error": 'Company name is required'}), 400
@@ -32,18 +26,11 @@ def register_company():
         if not description:
             return jsonify({"error": 'Company description is required'}), 400
 
-        # Check if the user exists
-        #user = User.query.get(user_id)
-        # if user is None:
-            #return jsonify({"error": 'User with the provided ID does not exist'}), 404
-
         # Creating a new company
         new_company = Company(
-            id=company_id,
             name=name,
             origin=origin,
-            description=description,
-            #user_id=user_id
+            description=description
         )
 
         db.session.add(new_company)

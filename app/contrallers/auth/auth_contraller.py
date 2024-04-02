@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from app.models.users import User, db
 from flask_bcrypt import Bcrypt
 from email_validator import validate_email, EmailNotValidError  # Make sure email_validator is imported correctly
+from flask_jwt_extended import create_access_token
+
 
 auth = Blueprint('auth', __name__, url_prefix='/api/v1/auth')
 bcrypt = Bcrypt()
@@ -141,3 +143,23 @@ def delete_user(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Failed to delete user', 'details': str(e)}), 500
+    
+    # Authentication endpoint to handle user login
+@auth.route('/login', methods=['POST'])
+def login():
+    try:
+        email = request.json.get('email')
+        password = request.json.get('password')
+
+        if not email or not password:
+            return jsonify({'error': 'Missing email or password'}), 400
+
+        user = User.query.filter_by(email=email).first()
+        if not user or not bcrypt.check_password_hash(user.password, password):
+            return jsonify({'error': 'Invalid email or password'}), 401
+
+        access_token = create_access_token(identity=user.id)
+        return jsonify({'access_token': access_token}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

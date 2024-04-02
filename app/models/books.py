@@ -1,7 +1,5 @@
 from app.extensions import db
 from datetime import datetime
-from app.models.users import User  # Import User before Book
-from app.models.companies import Company  # Import Company before Book
 
 class Book(db.Model):
     __tablename__ = 'books'
@@ -19,11 +17,12 @@ class Book(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, onupdate=datetime.now)
 
-    user = db.relationship('User', backref='books')
-    company = db.relationship('Company', backref='books')
-    
     def __init__(self, title, description, price, price_unit, publication_date, isbn, genre, pages, user_id, company_id):
         super(Book, self).__init__()
+        from app.models.users import User
+        from app.models.companies import Company
+        self.user = User.query.get(user_id)
+        self.company = Company.query.get(company_id)
         self.title = title
         self.description = description
         self.price = price
