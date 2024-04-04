@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from app.models.users import User, db
+from app.models.books import Book  # Adjust the import path as needed
 from flask_bcrypt import Bcrypt
-from email_validator import validate_email, EmailNotValidError  # Make sure email_validator is imported correctly
-from flask_jwt_extended import create_access_token
-
+from email_validator import validate_email, EmailNotValidError
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 auth = Blueprint('auth', __name__, url_prefix='/api/v1/auth')
 bcrypt = Bcrypt()
@@ -16,7 +16,7 @@ def register():
         last_name = request.json.get('last_name')
         contact = request.json.get('contact')
         email = request.json.get('email')
-        user_type = request.json.get('user_type', 'author')  # Default to 'author'
+        user_type = request.json.get('user_type', 'user')  # Default to 'user'
         password = request.json.get('password')
         biography = request.json.get('biography', '') if user_type == 'author' else ''
 
@@ -34,10 +34,7 @@ def register():
             return jsonify({'error': 'Password is too short'}), 400
 
         # Email validation 
-        try:
-            validate_email(email)  # Corrected the email validation function
-        except EmailNotValidError:
-            return jsonify({'error': 'Email is not valid'}), 400
+        validate_email(email)
 
         # Check for uniqueness of email and contact separately
         if User.query.filter_by(email=email).first() is not None:
@@ -71,13 +68,20 @@ def register():
             }
         }), 201
 
+    except EmailNotValidError:
+        return jsonify({'error': 'Email is not valid'}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-    
-# Get all users
+
 @auth.route('/users/', methods=['GET'])
+@jwt_required()  # Only authenticated users can access this route
 def get_all_users():
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(id=current_user).first()
+    if user.user_type != 'admin':
+        return jsonify({'error': 'You are not authorized to access this route'}), 403
+
     users = User.query.all()
     output = []
     for user in users:
@@ -93,9 +97,14 @@ def get_all_users():
         output.append(user_data)
     return jsonify({'users': output})
 
-# Get a specific user
 @auth.route('/user/<int:id>', methods=['GET'])
+@jwt_required()  # Only authenticated users can access this route
 def get_user(id):
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(id=current_user).first()
+    if user.user_type != 'admin' and user.id != id:
+        return jsonify({'error': 'You are not authorized to access this user data'}), 403
+
     user = User.query.get_or_404(id)
     user_data = {
         'id': user.id,
@@ -108,11 +117,14 @@ def get_user(id):
     }
     return jsonify(user_data)
 
-
-
-# Update a user
 @auth.route('/user/<int:id>', methods=['PUT'])
+@jwt_required()  # Only authenticated users can access this route
 def update_user(id):
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(id=current_user).first()
+    if user.user_type != 'admin' and user.id != id:
+        return jsonify({'error': 'You are not authorized to update this user'}), 403
+
     try:
         user = User.query.get_or_404(id)
         data = request.get_json()
@@ -132,19 +144,30 @@ def update_user(id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# Delete a user
 @auth.route('/user/<int:id>', methods=['DELETE'])
+@jwt_required()  # Only authenticated users can access this route
 def delete_user(id):
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(id=current_user).first()
+    if user.user_type != 'admin' and user.id != id:
+        return jsonify({'error': 'You are not authorized to delete this user'}), 403
+
     try:
+        # Check if there are related records in the books table
+        related_books = Book.query.filter_by(user_id=id).all()
+        for book in related_books:
+            db.session.delete(book)
+        
+        # Delete the user
         user = User.query.get_or_404(id)
         db.session.delete(user)
         db.session.commit()
-        return jsonify({'message': 'User deleted successfully'}), 200
+        
+        return jsonify({'message': 'User and associated books deleted successfully'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Failed to delete user', 'details': str(e)}), 500
-    
-    # Authentication endpoint to handle user login
+
 @auth.route('/login', methods=['POST'])
 def login():
     try:
@@ -155,11 +178,15 @@ def login():
             return jsonify({'error': 'Missing email or password'}), 400
 
         user = User.query.filter_by(email=email).first()
-        if not user or not bcrypt.check_password_hash(user.password, password):
-            return jsonify({'error': 'Invalid email or password'}), 401
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
 
+        if not bcrypt.check_password_hash(user.password_hash, password):
+            return jsonify({'error': 'Invalid password'}), 401
+
+        # Password is correct, generate access token
         access_token = create_access_token(identity=user.id)
-        return jsonify({'access_token': access_token}), 200
+        return jsonify({'message': f'Login successful. You have logged in as {user.user_type}', 'access_token': access_token}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

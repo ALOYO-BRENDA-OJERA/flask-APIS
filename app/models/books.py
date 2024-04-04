@@ -12,7 +12,7 @@ class Book(db.Model):
     isbn = db.Column(db.String(30), nullable=False, unique=True)
     genre = db.Column(db.String(50), nullable=False)
     pages = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Made nullable=False
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)  # Made nullable=False
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)  # Made nullable=False
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, onupdate=datetime.now)

@@ -7,7 +7,7 @@ class Company(db.Model):
     name = db.Column(db.String(50), nullable=False)
     origin = db.Column(db.String(100))
     description = db.Column(db.String(200))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))  # Foreign key linking to the users table
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Foreign key linking to the users table
     created_at = db.Column(db.DateTime, default=datetime.now())
     updated_at = db.Column(db.DateTime, onupdate=datetime.now())
 
