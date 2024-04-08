@@ -1,5 +1,7 @@
 from app.extensions import db
 from datetime import datetime
+from app.models.users import User
+from app.models.companies import Company
 
 class Book(db.Model):
     __tablename__ = 'books'
@@ -19,10 +21,6 @@ class Book(db.Model):
 
     def __init__(self, title, description, price, price_unit, publication_date, isbn, genre, pages, user_id, company_id):
         super(Book, self).__init__()
-        from app.models.users import User
-        from app.models.companies import Company
-        self.user = User.query.get(user_id)
-        self.company = Company.query.get(company_id)
         self.title = title
         self.description = description
         self.price = price

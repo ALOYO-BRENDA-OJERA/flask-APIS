@@ -12,6 +12,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)  # Changed from Text to String
     biography = db.Column(db.Text(), nullable=True)
     user_type = db.Column(db.String(20), default='author')
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'))  # Moved from __init__ to class definition
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, onupdate=datetime.now)
     
@@ -19,9 +20,11 @@ class User(db.Model):
     books_authored = db.relationship('Book', backref='author', lazy=True)
     
     # Define relationship to companies associated with the user
-    associated_companies = db.relationship('Company', backref='associated_user', lazy=True)
+    associated_companies = db.relationship('Company', backref='associated_user', lazy=True, foreign_keys='Company.user_id')
     
-    def __init__(self, first_name, last_name, email, contact, password, biography, user_type, image=None):
+    #company_id = db.Column(db.Integer, db.ForeignKey('companies.id'))
+    
+    def __init__(self, first_name, last_name, email, contact, password, biography, user_type, company_id=company_id, image=None):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
@@ -29,6 +32,8 @@ class User(db.Model):
         self.password_hash = password  # Assign the hashed password directly
         self.biography = biography
         self.user_type = user_type
+        self.company_id = company_id  # Set the company_id attribute
+        self.image = image
         self.image = image
         
     def get_full_name(self):
