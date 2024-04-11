@@ -88,7 +88,7 @@ def get_all_companies():
         return jsonify({"error": str(e)}), 500
 
 # Get company by ID
-@company_bp.route('/<int:id>', methods=['GET'])
+@company_bp.route('/company/<int:id>', methods=['GET'])
 @jwt_required()  # Only authenticated users can access this route
 def get_company(id):
     try:
@@ -120,21 +120,22 @@ def get_company(id):
         return jsonify({"error": str(e)}), 500
 
 # Update company details
-@company_bp.route('/<int:id>', methods=['PUT'])
+@company_bp.route('/company/<int:id>', methods=['PUT'])
 @jwt_required()  # Only authenticated users can access this route
 def update_company(id):
     try:
         # Get user ID from JWT token
         user_id = get_jwt_identity()
 
-        # Get user details
-        user = User.query.get(user_id)
-
         # Retrieve company by ID
         company = Company.query.get(id)
 
+        # Check if the company exists
+        if not company:
+            return jsonify({"error": "Company not found"}), 404
+
         # Check if user is admin or owner of the company
-        if user.user_type != 'admin' and company.user_id != user_id:
+        if user_id != company.user_id:
             return jsonify({"error": "You are not authorized to update this company"}), 403
 
         # Update company details
@@ -149,25 +150,26 @@ def update_company(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-
+    
+    
 # Delete company
-@company_bp.route('/<int:id>', methods=['DELETE'])
+@company_bp.route('/company/<int:id>', methods=['DELETE'])
+
 @jwt_required()  # Only authenticated users can access this route
 def delete_company(id):
-    
     try:
-        delete_company = Company.query.filter_by(id=id,user_id=user).first()
         # Get user ID from JWT token
         user_id = get_jwt_identity()
-
-        # Get user details
-        user = User.query.get(user_id)
 
         # Retrieve company by ID
         company = Company.query.get(id)
 
+        # Check if the company exists
+        if not company:
+            return jsonify({"error": "Company not found"}), 404
+
         # Check if user is admin or owner of the company
-        if user.user_type != 'admin' and company.user_id != user_id:
+        if user_id != company.user_id:
             return jsonify({"error": "You are not authorized to delete this company"}), 403
 
         # Delete company

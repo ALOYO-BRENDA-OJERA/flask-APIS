@@ -8,7 +8,7 @@ from flask_jwt_extended import JWTManager  # Import JWTManager
 # Import your database model classes here
 
 
-def create_app():
+def create_app():  #application factory fucntion
     app = Flask(__name__)
 
     # Load configuration from the Config class

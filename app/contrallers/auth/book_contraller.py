@@ -70,3 +70,68 @@ def register_book():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@book_bp.route('/book/<int:book_id>', methods=['DELETE'])
+@jwt_required()  # Only authenticated users can access this route
+def delete_book(book_id):
+    try:
+        # Get current user ID from JWT token
+        current_user_id = get_jwt_identity()
+        
+        # Check if the user is an author (user)
+        current_user = User.query.get(current_user_id)
+        if current_user.user_type != 'author':
+            return jsonify({"error": "Only authors can delete books"}), 403
+        
+        # Find the book to delete
+        book_to_delete = Book.query.filter_by(id=book_id, user_id=current_user_id).first()
+        if not book_to_delete:
+            return jsonify({"error": "Book not found or you don't have permission to delete it"}), 404
+
+        db.session.delete(book_to_delete)
+        db.session.commit()
+
+        return jsonify({"message": f"Book with ID {book_id} has been deleted"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+#update
+@book_bp.route('/book/<int:book_id>', methods=['PUT'])
+@jwt_required()  # Only authenticated users can access this route
+def update_book(book_id):
+    try:
+        data = request.get_json()
+
+        # Get current user ID from JWT token
+        current_user_id = get_jwt_identity()
+        
+        # Check if the user is an author (user)
+        current_user = User.query.get(current_user_id)
+        if current_user.user_type != 'author':
+            return jsonify({"error": "Only authors can update books"}), 403
+
+        # Find the book to update
+        book_to_update = Book.query.filter_by(id=book_id, user_id=current_user_id).first()
+        if not book_to_update:
+            return jsonify({"error": "Book not found or you don't have permission to update it"}), 404
+
+        # Update book details
+        book_to_update.title = data.get('title', book_to_update.title)
+        book_to_update.description = data.get('description', book_to_update.description)
+        book_to_update.price = data.get('price', book_to_update.price)
+        book_to_update.price_unit = data.get('price_unit', book_to_update.price_unit)
+        book_to_update.pages = data.get('pages', book_to_update.pages)
+        book_to_update.publication_date = datetime.strptime(data.get('publication_date'), '%Y-%m-%d').date() if data.get('publication_date') else book_to_update.publication_date
+        book_to_update.isbn = data.get('isbn', book_to_update.isbn)
+        book_to_update.genre = data.get('genre', book_to_update.genre)
+
+        db.session.commit()
+
+        return jsonify({"message": f"Book with ID {book_id} has been updated"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
