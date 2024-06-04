@@ -1,4 +1,4 @@
-from app.extensions import db
+from app import db
 from datetime import datetime
 
 class User(db.Model):
@@ -9,7 +9,7 @@ class User(db.Model):
     email = db.Column(db.String(100), nullable=False, unique=True)
     contact = db.Column(db.String(50), nullable=False, unique=True)
     image = db.Column(db.String(225), nullable=True)
-    password_hash = db.Column(db.String(255), nullable=False)  # Changed from Text to String
+    password_hash = db.Column(db.String(255), nullable=False)
     biography = db.Column(db.Text(), nullable=True)
     user_type = db.Column(db.String(20), default='author')
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'))  # Moved from __init__ to class definition
@@ -19,21 +19,15 @@ class User(db.Model):
     # Define relationship to books authored by the user
     books_authored = db.relationship('Book', backref='author', lazy=True)
     
-    # Define relationship to companies associated with the user
-    associated_companies = db.relationship('Company', backref='associated_user', lazy=True, foreign_keys='Company.user_id')
-    
-    #company_id = db.Column(db.Integer, db.ForeignKey('companies.id'))
-    
-    def __init__(self, first_name, last_name, email, contact, password, biography, user_type, company_id=company_id, image=None):
+    def __init__(self, first_name, last_name, email, contact, password, biography, user_type, company_id=None, image=None):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
         self.contact = contact
-        self.password_hash = password  # Assign the hashed password directly
+        self.password_hash = password
         self.biography = biography
         self.user_type = user_type
-        self.company_id = company_id  # Set the company_id attribute
-        self.image = image
+        self.company_id = company_id
         self.image = image
         
     def get_full_name(self):

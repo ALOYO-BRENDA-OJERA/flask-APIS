@@ -1,26 +1,24 @@
-from app.extensions import db
+from app import db
 from datetime import datetime
-from app.models.users import User
-from app.models.companies import Company
 
 class Book(db.Model):
     __tablename__ = 'books'
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(150), nullable=False)
-    price = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Integer, nullable=True)
     price_unit = db.Column(db.String(10), nullable=False, default='UGX')
-    publication_date = db.Column(db.String(50), nullable=False)  # Changed to String for simplicity
+    publication_date = db.Column(db.Date, nullable=False)  # Changed to Date type for publication date
     isbn = db.Column(db.String(30), nullable=False, unique=True)
     genre = db.Column(db.String(50), nullable=False)
     pages = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)  # Made nullable=False
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)  # Made nullable=False
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, onupdate=datetime.now)
 
     def __init__(self, title, description, price, price_unit, publication_date, isbn, genre, pages, user_id, company_id):
-        super(Book, self).__init__()
+        super().__init__()  # Call superclass constructor
         self.title = title
         self.description = description
         self.price = price

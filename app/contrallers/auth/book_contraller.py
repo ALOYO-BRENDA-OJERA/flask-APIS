@@ -32,11 +32,12 @@ def register_book():
         if current_user.user_type != 'author':
             return jsonify({"error": "Only authors can register books"}), 403
 
+        # Check if publication_date is provided
+        if publication_date is None:
+            return jsonify({"error": "Publication date is required"}), 400
+
         # Convert publication_date to a Date object
-        try:
-            publication_date = datetime.strptime(publication_date, '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({"error": "Invalid publication date format. Please use YYYY-MM-DD"}), 400
+        publication_date = datetime.strptime(publication_date, '%Y-%m-%d').date()
 
         # Create a new book instance
         new_book = Book(
@@ -134,4 +135,57 @@ def update_book(book_id):
 
     except Exception as e:
         db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@book_bp.route('/', methods=['GET'])
+def get_all_books():
+    try:
+        books = Book.query.all()
+        book_list = []
+        for book in books:
+            book_details = {
+                'id': book.id,
+                'title': book.title,
+                'description': book.description,
+                'price': book.price,
+                'price_unit': book.price_unit,
+                'pages': book.pages,
+                'publication_date': book.publication_date.isoformat(),
+                'isbn': book.isbn,
+                'genre': book.genre,
+                'user_id': book.user_id,
+                'company_id': book.company_id
+            }
+            book_list.append(book_details)
+        
+        return jsonify({"books": book_list}), 200
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@book_bp.route('/book/<int:book_id>', methods=['GET'])
+def get_book(book_id):
+    try:
+        book = Book.query.get(book_id)
+        if not book:
+            return jsonify({"error": "Book not found"}), 404
+        
+        book_details = {
+            'id': book.id,
+            'title': book.title,
+            'description': book.description,
+            'price': book.price,
+            'price_unit': book.price_unit,
+            'pages': book.pages,
+            'publication_date': book.publication_date.isoformat(),
+            'isbn': book.isbn,
+            'genre': book.genre,
+            'user_id': book.user_id,
+            'company_id': book.company_id
+        }
+        
+        return jsonify({"book": book_details}), 200
+    
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

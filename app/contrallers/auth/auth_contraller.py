@@ -1,9 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app.models.users import User, db
-from app.models.books import Book  # Adjust the import path as needed
-from flask_bcrypt import Bcrypt
+from app.models.books import Book
 from email_validator import validate_email, EmailNotValidError
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_bcrypt import Bcrypt
+from app.models.revoked_tokens import RevokedTokenModel
+
 
 auth = Blueprint('auth', __name__, url_prefix='/api/v1/auth')
 bcrypt = Bcrypt()
@@ -11,24 +13,21 @@ bcrypt = Bcrypt()
 @auth.route('/register', methods=['POST'])
 def register():
     try:
-        # Extracting request data
-        first_name = request.json.get('first_name')
-        last_name = request.json.get('last_name')
-        contact = request.json.get('contact')
-        email = request.json.get('email')
-        user_type = request.json.get('user_type', 'user')  # Default to 'user'
-        password = request.json.get('password')
-        biography = request.json.get('biography', '') if user_type == 'author' else ''
+        data = request.json
 
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        # Extracting request data
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        contact = data.get('contact')
+        email = data.get('email')
+        user_type = data.get('user_type', 'user')  # Default to 'user'
+        password = data.get('password')
+        biography = data.get('biography', '') if user_type == 'author' else ''
 
         # Basic input validation
         required_fields = ['first_name', 'last_name', 'contact', 'password', 'email']
-        if not all(request.json.get(field) for field in required_fields):
+        if not all(data.get(field) for field in required_fields):
             return jsonify({'error': 'All fields are required'}), 400
-
-        if user_type == 'author' and not biography:
-            return jsonify({'error': 'Enter your author biography'}), 400
 
         if len(password) < 6:
             return jsonify({'error': 'Password is too short'}), 400
@@ -42,6 +41,9 @@ def register():
 
         if User.query.filter_by(contact=contact).first() is not None:
             return jsonify({'error': 'Contact already exists'}), 409
+
+        # Hash the password
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
         # Creating a new user
         new_user = User(first_name=first_name, last_name=last_name, email=email,
@@ -127,7 +129,7 @@ def update_user(id):
 
     try:
         user = User.query.get_or_404(id)
-        data = request.get_json()
+        data = request.json
         user.email = data.get('email', user.email)
         user.first_name = data.get('first_name', user.first_name)
         user.last_name = data.get('last_name', user.last_name)
@@ -188,5 +190,18 @@ def login():
         access_token = create_access_token(identity=user.id)
         return jsonify({'message': f'Login successful. You have logged in as {user.user_type}', 'access_token': access_token}), 200
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@auth.route('/logout', methods=['POST'])
+@jwt_required()  # Only authenticated users can access this route
+def logout():
+    try:
+        # Logout the user by invalidating the JWT token
+        jti = get_jwt()['jti']
+        revoked_token = RevokedTokenModel(jti=jti)
+        db.session.add(revoked_token)
+        db.session.commit()
+        return jsonify({'message': 'Logout successful'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
